@@ -1,7 +1,7 @@
 # API DOCUMENTATION - WebHub Backend
 
 ## Tổng quan
-WebHub Backend là REST API được xây dựng bằng Spring Boot, cung cấp các dịch vụ quản lý blog, project, event, user và file storage.
+WebHub Backend là REST API được xây dựng bằng Spring Boot, cung cấp các dịch vụ quản lý blog, project, event, user, document và file storage.
 
 **Base URL**: `http://localhost:8080`
 
@@ -14,9 +14,9 @@ Hệ thống sử dụng JWT (JSON Web Token) cho authentication:
 - **Header Format**: `Authorization: Bearer <token>`
 
 ### User Roles
-- **ROOT**: Quyền cao nhất, có thể thực hiện mọi thao tác
-- **ADMIN**: Quản trị viên, có thể quản lý blog, project, event, user
-- **MEMBER**: Thành viên thường, chỉ có thể xem và cập nhật profile
+- **ROOT**: Quyền cao nhất, có thể thực hiện mọi thao tác.
+- **ADMIN**: Quản trị viên, có thể quản lý blog, project, event, user, document.
+- **MEMBER**: Thành viên thường, có thể xem và cập nhật profile, truy cập tài nguyên được chia sẻ.
 
 ---
 
@@ -27,8 +27,7 @@ Hệ thống sử dụng JWT (JSON Web Token) cho authentication:
 ```http
 POST /api/v1/auth/login
 ```
-
-**Mô tả**: Xác thực người dùng và trả về access token + refresh token
+**Mô tả**: Xác thực người dùng và trả về access token + refresh token.
 
 **Request Body**:
 ```json
@@ -46,19 +45,15 @@ POST /api/v1/auth/login
 }
 ```
 
-**Error** (401 Unauthorized):
-```json
-{
-  "message": "Thông tin đăng nhập không hợp lệ"
-}
-```
+**Errors**:
+- **401 Unauthorized**: `{"message": "Thông tin đăng nhập không hợp lệ"}`
+- **403 Forbidden**: `{"message": "Tài khoản hiện bị khóa"}`
 
 ### 1.2 Làm mới token
 ```http
 POST /api/v1/auth/refresh
 ```
-
-**Mô tả**: Lấy access token mới từ refresh token
+**Mô tả**: Lấy access token mới từ refresh token.
 
 **Request Body**:
 ```json
@@ -79,23 +74,21 @@ POST /api/v1/auth/refresh
 ```http
 POST /api/v1/auth/forgot-password?email={email}
 ```
-
-**Mô tả**: Gửi email khôi phục mật khẩu
+**Mô tả**: Gửi email khôi phục mật khẩu.
 
 **Parameters**:
-- `email` (query, required): Email người dùng
+- `email` (query, required): Email người dùng.
 
-**Response** (201 Created): Void
+**Response** (200 OK): Void
 
 ### 1.4 Xác minh tài khoản
 ```http
 GET /api/v1/auth/verify/{token}
 ```
-
-**Mô tả**: Xác minh email người dùng qua token
+**Mô tả**: Xác minh email người dùng qua token được gửi trong email.
 
 **Parameters**:
-- `token` (path, required): Token xác minh
+- `token` (path, required): Token xác minh.
 
 **Response** (200 OK): Void
 
@@ -103,8 +96,7 @@ GET /api/v1/auth/verify/{token}
 ```http
 POST /api/v1/auth/reset-password
 ```
-
-**Mô tả**: Đặt lại mật khẩu mới từ mã xác minh
+**Mô tả**: Đặt lại mật khẩu mới từ token đã xác minh.
 
 **Request Body**:
 ```json
@@ -114,10 +106,7 @@ POST /api/v1/auth/reset-password
 }
 ```
 
-**Response** (200 OK):
-```json
-"Reset password successfully"
-```
+**Response** (200 OK): `{"message": "Reset password successfully"}`
 
 ### 1.6 Đổi mật khẩu
 ```http
@@ -125,7 +114,7 @@ POST /api/v1/auth/change-password
 ```
 **Authentication**: Required
 
-**Mô tả**: Người dùng đổi mật khẩu trong khi đang đăng nhập
+**Mô tả**: Người dùng đổi mật khẩu khi đang đăng nhập.
 
 **Request Body**:
 ```json
@@ -135,10 +124,7 @@ POST /api/v1/auth/change-password
 }
 ```
 
-**Response** (200 OK):
-```json
-"Change password successful"
-```
+**Response** (200 OK): `{"message": "Change password successful"}`
 
 ### 1.7 Đăng xuất
 ```http
@@ -146,17 +132,14 @@ POST /api/v1/auth/logout
 ```
 **Authentication**: Required
 
-**Mô tả**: Đăng xuất và thu hồi refresh token
+**Mô tả**: Đăng xuất và thu hồi refresh token.
 
-**Response** (200 OK):
-```json
-"Log out successfully"
-```
+**Response** (200 OK): `{"message": "Log out successfully"}`
 
 ---
 
 ## 2. USER MANAGEMENT ENDPOINTS
-**Base Path**: `/api/v1`
+**Base Path**: `/api/v1/users`
 
 ### 2.1 Tìm kiếm người dùng
 ```http
@@ -164,13 +147,13 @@ GET /api/v1/users
 ```
 **Roles**: ADMIN, ROOT
 
-**Mô tả**: Trả về danh sách người dùng phù hợp với tiêu chí tìm kiếm
+**Mô tả**: Trả về danh sách người dùng phù hợp với tiêu chí tìm kiếm.
 
 **Query Parameters**:
-- `name` (optional): Tên người dùng
-- `email` (optional): Email
-- `role` (optional): UserRole (ROOT, ADMIN, MEMBER)
-- `status` (optional): Boolean trạng thái active
+- `name` (optional): Tên người dùng.
+- `email` (optional): Email.
+- `role` (optional): UserRole (ROOT, ADMIN, MEMBER).
+- `status` (optional): Boolean trạng thái active.
 
 **Response** (200 OK):
 ```json
@@ -217,7 +200,7 @@ PATCH /api/v1/users/{id}
 **Roles**: ADMIN, ROOT
 
 **Path Parameters**:
-- `id` (required): ID người dùng
+- `id` (required): ID người dùng.
 
 **Request Body**:
 ```json
@@ -315,7 +298,7 @@ PATCH /api/v1/users/me/avatar
 **Content-Type**: multipart/form-data
 
 **Form Parameters**:
-- `avatar` (optional): MultipartFile
+- `avatar` (required): MultipartFile
 
 ---
 
@@ -335,7 +318,7 @@ GET /api/blog-posts
 - `search` (optional): Từ khóa tìm kiếm
 - `tag` (optional): Tag filter
 
-**Response** (200 OK):
+**Response** (200 OK): (Cấu trúc phân trang)
 ```json
 {
   "data": [
@@ -349,13 +332,7 @@ GET /api/blog-posts
       "tags": ["string"]
     }
   ],
-  "pagination": {
-    "totalItems": "long",
-    "totalPages": "integer",
-    "currentPage": "integer",
-    "nextPage": "integer",
-    "prevPage": "integer"
-  }
+  "pagination": { ... }
 }
 ```
 
@@ -364,51 +341,24 @@ GET /api/blog-posts
 GET /api/blog-posts/featured
 ```
 
-**Response** (200 OK):
-```json
-[
-  {
-    "id": "long",
-    "title": "string",
-    "thumbnailUrl": "string",
-    "slug": "string"
-  }
-]
-```
-
 #### 3.1.3 Lấy chi tiết bài viết theo slug
 ```http
 GET /api/blog-posts/{slug}
 ```
 
-**Path Parameters**:
-- `slug` (required): Slug của bài viết
-
-**Response** (200 OK):
-```json
-{
-  "id": "long",
-  "title": "string",
-  "content": "string",
-  "thumbnailUrl": "string",
-  "slug": "string",
-  "publishedAt": "datetime",
-  "author": {
-    "id": "long",
-    "fullName": "string"
-  },
-  "tags": ["string"]
-}
+#### 3.1.4 Lấy các bài viết gần đây
+```http
+GET /api/blog-posts/recent?limit={limit}
 ```
 
 ### 3.2 ADMIN ENDPOINTS
+**Base Path**: `/api/admin/blog-posts`
+**Roles**: ADMIN, ROOT
 
 #### 3.2.1 Lấy tất cả bài viết cho admin
 ```http
 GET /api/admin/blog-posts
 ```
-**Roles**: ADMIN, ROOT
-
 **Query Parameters**:
 - `page`, `size`: Pagination
 - `search` (optional): Từ khóa tìm kiếm
@@ -419,11 +369,6 @@ GET /api/admin/blog-posts
 ```http
 POST /api/admin/blog-posts?user_id={user_id}
 ```
-**Roles**: ADMIN, ROOT
-
-**Query Parameters**:
-- `user_id` (required): ID người tạo
-
 **Request Body**:
 ```json
 {
@@ -436,69 +381,40 @@ POST /api/admin/blog-posts?user_id={user_id}
 }
 ```
 
-**Response** (201 Created):
-```json
-{
-  "id": "long",
-  "title": "string",
-  "slug": "string",
-  "status": "string",
-  "message": "Tạo bài viết thành công"
-}
-```
-
 #### 3.2.3 Cập nhật bài viết
 ```http
 PUT /api/admin/blog-posts/{id}
 ```
-**Roles**: ADMIN, ROOT
+**Request Body**: (Tương tự mục 3.2.2)
 
 #### 3.2.4 Xóa bài viết
 ```http
 DELETE /api/admin/blog-posts/{id}
 ```
-**Roles**: ADMIN, ROOT
 
 #### 3.2.5 Thay đổi trạng thái bài viết
 ```http
 PATCH /api/admin/blog-posts/{id}/status
 ```
-**Roles**: ADMIN, ROOT
-
-**Request Body**:
-```json
-{
-  "status": "DRAFT|PUBLISHED|ARCHIVED"
-}
-```
+**Request Body**: `{"status": "DRAFT|PUBLISHED|ARCHIVED"}`
 
 #### 3.2.6 Ghim/bỏ ghim bài viết
 ```http
 PATCH /api/admin/blog-posts/{id}/pin
 ```
-**Roles**: ADMIN, ROOT
-
-**Request Body**:
-```json
-{
-  "isPinned": "boolean"
-}
-```
+**Request Body**: `{"isPinned": "boolean"}`
 
 #### 3.2.7 Lấy blog theo ID để edit
 ```http
 GET /api/admin/blog-posts/{id}
 ```
-**Roles**: ADMIN, ROOT
 
 #### 3.2.8 Utility endpoints
 ```http
-GET /api/blog-posts/recent?limit={limit}
 GET /api/admin/blog-posts/count
 GET /api/admin/blog-posts/count/status/{status}
 GET /api/admin/blog-posts/exists/{id}
 ```
-**Roles**: ADMIN, ROOT
 
 ---
 
@@ -527,56 +443,58 @@ POST /api/v1/projects
 ```http
 GET /api/v1/projects
 ```
-
 **Query Parameters**:
-- `page` (default: 0): Số trang
-- `size` (default: 10): Kích thước trang
-
-**Response** (200 OK):
-```json
-{
-  "content": [
-    {
-      "id": "long",
-      "title": "string",
-      "description": "string",
-      "type": "string",
-      "status": "string",
-      "thumbnailUrl": "string",
-      "isFeatured": "boolean"
-    }
-  ],
-  "totalElements": "long",
-  "totalPages": "integer",
-  "currentPage": "integer"
-}
-```
+- `page` (default: 0), `size` (default: 10): Phân trang.
 
 ### 4.3 Lấy project theo ID
 ```http
 GET /api/v1/projects/{id}
 ```
 
-### 4.4 Lấy projects theo tags
+### 4.4 Cập nhật project
+```http
+PUT /api/v1/projects/{id}
+```
+**Roles**: ADMIN, ROOT
+**Request Body**: (Tương tự mục 4.1)
+
+### 4.5 Cập nhật trạng thái project
+```http
+PUT /api/v1/projects/{id}/status
+```
+**Roles**: ADMIN, ROOT
+**Request Body**: `{"status": "PROJECT_STATUS"}`
+
+### 4.6 Cập nhật type project
+```http
+PUT /api/v1/projects/{id}/type
+```
+**Roles**: ADMIN, ROOT
+**Request Body**: `{"type": "PROJECT_TYPE"}`
+
+### 4.7 Cập nhật featured status
+```http
+PUT /api/v1/projects/{id}/isFeatured
+```
+**Roles**: ADMIN, ROOT
+**Request Body**: `{"isFeatured": "boolean"}`
+
+### 4.8 Xóa project
+```http
+DELETE /api/v1/projects/{id}
+```
+**Roles**: ADMIN, ROOT
+
+### 4.9 Lấy projects theo tags
 ```http
 POST /api/v1/projects/tags
 ```
+**Request Body**: `["long"]` (Mảng các ID của tag)
 
-**Request Body**:
-```json
-["long"]
-```
-
-### 4.5 Lấy tags của project
-```http
-GET /api/v1/projects/{projectId}/tags
-```
-
-### 4.6 Filter projects
+### 4.10 Filter projects
 ```http
 POST /api/v1/projects/filter
 ```
-
 **Request Body**:
 ```json
 {
@@ -587,50 +505,40 @@ POST /api/v1/projects/filter
 }
 ```
 
-### 4.7 Lấy projects theo type
+### 4.11 Lấy tags của một project
 ```http
-GET /api/v1/projects/type?type={type}&page={page}&size={size}
+GET /api/v1/projects/{projectId}/tags
 ```
-
-### 4.8 Cập nhật project
-```http
-PUT /api/v1/projects/{id}
-```
-**Roles**: ADMIN, ROOT
-
-### 4.9 Cập nhật trạng thái project
-```http
-PUT /api/v1/projects/{id}/status
-```
-**Roles**: ADMIN, ROOT
-
-### 4.10 Cập nhật type project
-```http
-PUT /api/v1/projects/{id}/type
-```
-**Roles**: ADMIN, ROOT
-
-### 4.11 Cập nhật featured status
-```http
-PUT /api/v1/projects/{id}/isFeatured
-```
-**Roles**: ADMIN, ROOT
-
-### 4.12 Xóa project
-```http
-DELETE /api/v1/projects/{id}
-```
-**Roles**: ADMIN, ROOT
 
 ---
 
 ## 5. EVENT ENDPOINTS
+**Base Path**: `/api/v1/events`
 
-### 5.1 Tạo event
+### 5.1 Lấy danh sách sự kiện
+```http
+GET /api/v1/events
+```
+**Authentication**: Optional (Guest có thể xem)
+
+**Query Parameters**:
+- `title` (optional): Tên event.
+- `location` (optional): Địa điểm.
+- `status` (optional): EventStatus.
+
+**Response** (200 OK): Mảng các đối tượng Event.
+
+### 5.2 Lấy chi tiết sự kiện
+```http
+GET /api/v1/events/{id}
+```
+**Authentication**: Optional
+
+### 5.3 Tạo sự kiện mới
 ```http
 POST /api/v1/events
 ```
-**Roles**: ADMIN
+**Roles**: ADMIN, ROOT
 
 **Request Body**:
 ```json
@@ -640,41 +548,27 @@ POST /api/v1/events
   "location": "string",
   "startDate": "datetime",
   "endDate": "datetime",
-  "status": "EVENT_STATUS"
+  "status": "EVENT_STATUS",
+  "isPublic": "boolean",
+  "isFeatured": "boolean"
 }
 ```
+**Response** (201 Created): `{"message": "Tạo thành công"}`
 
-**Response** (201 Created):
-```json
-{
-  "message": "Tạo thành công"
-}
-```
-
-### 5.2 Tìm kiếm events (User)
+### 5.4 Cập nhật sự kiện
 ```http
-GET /api/v1/user/events
+PUT /api/v1/events/{id}
 ```
+**Roles**: ADMIN, ROOT
+**Request Body**: (Tương tự mục 5.3)
+**Response** (200 OK): `{"message": "Cập nhật thành công"}`
 
-**Query Parameters**:
-- `title` (optional): Tên event
-- `location` (optional): Địa điểm
-- `status` (optional): EventStatus
-
-**Response** (200 OK):
-```json
-[
-  {
-    "id": "long",
-    "title": "string",
-    "description": "string",
-    "location": "string",
-    "startDate": "datetime",
-    "endDate": "datetime",
-    "status": "string"
-  }
-]
+### 5.5 Xóa sự kiện
+```http
+DELETE /api/v1/events/{id}
 ```
+**Roles**: ADMIN, ROOT
+**Response** (200 OK): `{"message": "Xóa thành công"}`
 
 ---
 
@@ -705,7 +599,6 @@ POST /api/v1/files/statics/{type}
 ```http
 GET /api/v1/files/statics/{type}/{filename}
 ```
-
 **Path Parameters**:
 - `type` (required): Loại storage
 - `filename` (required): Tên file
@@ -721,37 +614,97 @@ DELETE /api/v1/files/{type}/{filename}
 ```http
 GET /api/v1/files/statics/{type}
 ```
-
-**Response** (200 OK):
-```json
-["string"]
-```
+**Response** (200 OK): `["string"]`
 
 ---
 
-## 7. FOLDER ENDPOINTS
-**Base Path**: `/api/v1/folders`
+## 7. FOLDER & DOCUMENT ENDPOINTS
+**Base Path**: `/api/v1`
 
-### 7.1 Lấy thông tin folder
+### 7.1 Lấy danh sách thư mục
 ```http
-GET /api/v1/folders/{folderId}
+GET /api/v1/folders
 ```
+**Roles**: MEMBER, ADMIN, ROOT
+**Query Parameters**:
+- `parent_id` (optional, long): ID của thư mục cha. Nếu không có, lấy thư mục gốc.
 
-**Path Parameters**:
-- `folderId` (required): ID của folder
-
-**Response** (200 OK):
-```json
-{
-  "id": "long",
-  "name": "string",
-  "contents": ["object"]
-}
+### 7.2 Tạo thư mục mới
+```http
+POST /api/v1/folders
 ```
+**Roles**: ADMIN, ROOT
+**Request Body**: `{"name": "string", "parent_folder_id": "long"}`
+
+### 7.3 Cập nhật thư mục
+```http
+PATCH /api/v1/folders/{id}
+```
+**Roles**: ADMIN, ROOT
+**Request Body**: `{"name": "string", "parent_folder_id": "long"}`
+
+### 7.4 Xóa thư mục
+```http
+DELETE /api/v1/folders/{id}
+```
+**Roles**: ADMIN, ROOT
+**Description**: Xóa vĩnh viễn thư mục và toàn bộ nội dung bên trong.
+
+### 7.5 Lấy danh sách tài liệu
+```http
+GET /api/v1/documents
+```
+**Roles**: MEMBER, ADMIN, ROOT
+**Query Parameters**:
+- `q` (optional): Từ khóa tìm kiếm.
+- `tags` (optional): Chuỗi ID các tag, cách nhau bởi dấu phẩy (vd: "1,5,12").
+- `folder_id` (optional): Lọc tài liệu trong một thư mục cụ thể.
+- `page`, `size`: Pagination.
+
+### 7.6 Xem và Tải tài liệu
+```http
+GET /api/v1/documents/{id}
+```
+**Roles**: MEMBER, ADMIN, ROOT
+**Query Parameters**:
+- `download` (optional, boolean): Nếu `true`, trả về file stream để tải xuống. Mặc định là `false` (trả về thông tin chi tiết dạng JSON).
+
+### 7.7 Tạo tài liệu (Upload)
+```http
+POST /api/v1/documents
+```
+**Roles**: MEMBER, ADMIN, ROOT
+**Content-Type**: multipart/form-data
+**Form Parameters**:
+- `title` (required, string)
+- `description` (optional, string)
+- `file` (conditional, MultipartFile)
+- `source_type` (optional, string, default: INTERNAL_UPLOAD)
+- `source_location` (conditional, string, for EXTERNAL_LINK)
+- `is_public` (optional, boolean, default: false)
+- `status` (optional, string, default: DRAFT)
+- `tags` (optional, string, comma-separated IDs)
+- `folder_id` (optional, long)
+
+### 7.8 Cập nhật tài liệu
+```http
+PATCH /api/v1/documents/{id}
+```
+**Roles**: MEMBER (chỉ tài liệu của mình), ADMIN, ROOT (mọi tài liệu)
+**Content-Type**: multipart/form-data
+**Form Parameters**: Tương tự mục 7.7 (các trường đều là tùy chọn).
+
+### 7.9 Xóa tài liệu
+```http
+DELETE /api/v1/documents/{id}
+```
+**Roles**: MEMBER (chỉ tài liệu của mình), ADMIN, ROOT (mọi tài liệu)
+**Query Parameters**:
+- `force` (optional, boolean): Nếu `true`, xóa vĩnh viễn. Mặc định là xóa mềm. (Chỉ ADMIN/ROOT có quyền dùng `force=true`).
 
 ---
 
-## Error Handling
+## 8. Error Handling
 
 ### Cấu trúc Error Response
 ```json
@@ -766,6 +719,7 @@ GET /api/v1/folders/{folderId}
 ### Common HTTP Status Codes
 - **200 OK**: Thành công
 - **201 Created**: Tạo thành công
+- **204 No Content**: Thành công nhưng không có nội dung trả về (ví dụ: xóa)
 - **400 Bad Request**: Dữ liệu không hợp lệ
 - **401 Unauthorized**: Chưa xác thực
 - **403 Forbidden**: Không có quyền truy cập
@@ -774,38 +728,16 @@ GET /api/v1/folders/{folderId}
 
 ---
 
-## Security Notes
+## 9. Security & Configuration
 
-1. **CORS**: Được cấu hình cho phép cross-origin requests
-2. **CSRF**: Đã được disable do sử dụng JWT
-3. **Session**: Stateless (không sử dụng session)
-4. **JWT Secret**: Cấu hình trong application.properties
-5. **OAuth2**: Tích hợp với GitLab OAuth
+### Security
+- **CORS**: Được cấu hình cho phép cross-origin requests.
+- **CSRF**: Đã được disable do sử dụng JWT.
+- **Session**: Stateless (không sử dụng session).
+- **OAuth2**: Tích hợp với GitLab OAuth.
 
-### Security Headers
-- `Authorization: Bearer <access_token>`
-- Content-Type phù hợp với từng endpoint
-
----
-
-## Configuration
-
-### Database
-- **Type**: PostgreSQL
-- **Host**: postgres:5432
-- **Database**: rtic_db
-- **Username**: rtic
-
-### File Upload
-- **Max File Size**: 10MB
-- **Max Request Size**: 10MB
-- **Storage Paths**:
-  - avatars: uploads/avatars
-  - documents: uploads/documents
-  - media: uploads/media
-  - temp: uploads/temp
-  - thumbnails: uploads/thumbnails
-
-### JWT Configuration
-- **Access Token Validity**: 2 hours
-- **Refresh Token Validity**: 7 days 
+### Configuration
+- **Database**: PostgreSQL (`postgres:5432`, db: `rtic_db`, user: `rtic`)
+- **File Upload**: Max size 10MB.
+- **Storage Paths**: `uploads/avatars`, `uploads/documents`, ...
+- **JWT**: Access token 2 giờ, Refresh token 7 ngày.
